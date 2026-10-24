@@ -1,0 +1,7 @@
+REM Direct-mode stage 2: fire overflow then run PROBE()
+REM Do this AFTER RUN printed DIST PROBE READY 1015, in Direct mode, fresh app session
+DEFAULTDELAY 60
+DELAY 1500
+STRINGLN REMOVE NSR,&H60000000,&H3FFFFFFF
+DELAY 1500
+STRINGLN V=PROBE()
