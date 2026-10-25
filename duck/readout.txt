@@ -1,0 +1,6 @@
+REM Read back the probe output file (Direct mode, safe anytime)
+REM Prints whatever PROBE() managed to save before dying/finishing
+DEFAULTDELAY 60
+DELAY 6000
+STRINGLN LOADV "TXT:PROBEOUT" OUT R$
+STRINGLN PRINT R$
