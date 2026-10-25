@@ -1,6 +1,7 @@
 REM Read back the probe output file (Direct mode, safe anytime)
-REM Prints whatever PROBE() managed to save before dying/finishing
+REM If it prints NOPROBEOUT-YET the file doesn't exist yet
 DEFAULTDELAY 60
 DELAY 6000
+STRINGLN R$="NOPROBEOUT-YET"
 STRINGLN LOADV "TXT:PROBEOUT" OUT R$
 STRINGLN PRINT R$
