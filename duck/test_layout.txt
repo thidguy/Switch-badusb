@@ -1,0 +1,9 @@
+REM Keyboard layout + speed test for the Switch editor
+REM After running: compare each line on screen against the REM EXPECT lines below
+DEFAULTDELAY 40
+DELAY 3000
+STRINGLN ABCDEFGHIJKLMNOPQRSTUVWXYZ abcdefghijklmnopqrstuvwxyz
+STRINGLN 0123456789 !@#$%^&*()_+-=[]{}|;:,.<>?/~`
+STRINGLN REM EXPECT-1: ABCDEFGHIJKLMNOPQRSTUVWXYZ abcdefghijklmnopqrstuvwxyz
+STRINGLN REM EXPECT-2: 0123456789 !@#$%^&*()_+-=[]{}|;:,.<>?/~`
+STRINGLN IF BOTH LINES MATCH THE EXPECT LINES YOUR LAYOUT IS CORRECT

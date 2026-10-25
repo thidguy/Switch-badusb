@@ -1,0 +1,7 @@
+REM Fresh session: load saved program into slot 0 and run it (Direct mode)
+REM If a confirm prompt appears, press A during the 4s pause
+DEFAULTDELAY 60
+DELAY 6000
+STRINGLN LOAD "TXT:NS2",0
+DELAY 4000
+STRINGLN RUN

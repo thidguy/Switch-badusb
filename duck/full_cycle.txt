@@ -1,0 +1,12 @@
+REM FULL RETRY CYCLE - run in Direct mode on a fresh app session
+REM Does: load saved probe, RUN, fire overflow, run PROBE()
+REM Press A on any confirm prompt during the pauses
+DEFAULTDELAY 80
+DELAY 6000
+STRINGLN LOAD "TXT:NS2",0
+DELAY 4000
+STRINGLN RUN
+DELAY 5000
+STRINGLN REMOVE NSR,&H60000000,&H3FFFFFFF
+DELAY 4500
+STRINGLN V=PROBE()

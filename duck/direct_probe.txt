@@ -1,0 +1,10 @@
+REM Direct-mode stage 2: fire overflow then run PROBE()
+REM PRE: "DIST PROBE READY 1015" already printed in THIS app session, and NO REMOVE done yet this session
+REM 1) On the Switch: Direct mode, cursor on the empty input line
+REM 2) Tap Run in TapDucky, set the phone down - 6s until first keystroke
+REM 3) Watch for "Out of memory" (expected) - 3s later V=PROBE() types itself
+DEFAULTDELAY 60
+DELAY 6000
+STRINGLN REMOVE NSR,&H60000000,&H3FFFFFFF
+DELAY 3000
+STRINGLN V=PROBE()
