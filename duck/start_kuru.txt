@@ -1,0 +1,7 @@
+REM Direct-mode: fire overflow then call START with the PC address
+REM PRE: kurumuz bootstrap in slot 0, RUN already printed DIST BOOT READY 1015
+DEFAULTDELAY 60
+DELAY 6000
+STRINGLN REMOVE NSR,&H60000000,&H3FFFFFFF
+DELAY 4500
+STRINGLN V=START(39380,192,168,50,5)
