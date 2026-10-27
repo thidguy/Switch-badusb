@@ -1,0 +1,4 @@
+REM Load saved bootstrap into slot 0 (DEMO version - uses LOADV/PRGSET)
+DEFAULTDELAY 60
+DELAY 6000
+STRINGLN PRGEDIT 0:LOADV "TXT:NS2" OUT C$:PRGSET C$
