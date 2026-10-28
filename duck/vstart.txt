@@ -1,0 +1,8 @@
+REM V=START - connect the running exploit to the PC host
+REM For: BermTheSequel bootstrap on SmileBASIC 4.4.6 DEMO
+REM Bootstrap defines COMMON DEF START(PORT,A,B,C,D) = 5 args (port + 4 IP octets)
+REM PC host: 192.168.50.5 port 39380 (always-on, auto-restarts)
+REM WHEN: Direct mode, AFTER REMOVE printed Out of memory
+DEFAULTDELAY 80
+DELAY 6000
+STRINGLN V=START(39380,192,168,50,5)

