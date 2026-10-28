@@ -1,0 +1,12 @@
+REM TYPED-IN PATH - use ONLY after typing berm_bootstrap.txt into Make a Program
+REM Do NOT load TXT:NS2 this time! Start this payload at DIRECT MODE.
+REM Expect: DIST BOOT READY 1015 -> Out of memory -> BINDINGS + BOOT OK
+REM -> up to 60s pause (connect wait, do not touch) -> HOST CONNECTED + RPC RUNNING
+DEFAULTDELAY 80
+DELAY 6000
+STRINGLN RUN
+DELAY 8000
+STRINGLN REMOVE NSR,&H60000000,&H3FFFFFFF
+DELAY 5000
+STRINGLN V=START(39380,192,168,50,5)
+DELAY 9000
