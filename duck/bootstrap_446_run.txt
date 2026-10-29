@@ -1,0 +1,33 @@
+REM ============================================
+REM ns2jb 4.4.6 JP demo - Switch Lite FW 23.0.1
+REM STAGE 1 (first):  bootstrap_446_lib.txt  -> types the library into slot 0
+REM STAGE 2 (this):   save it, then LOAD/RUN/REMOVE/DISCOVER
+REM ============================================
+
+DEFAULTDELAY 60
+DELAY 9000
+
+REM Save the typed library as TXT:NS2
+STRINGLN SAVE "TXT:NS2"
+DELAY 6000
+
+REM Load it back clean, then run it
+STRINGLN LOAD "TXT:NS2"
+DELAY 3000
+
+REM Run it: builds NSR, prints DIST BOOT READY 4461
+STRINGLN RUN
+DELAY 14000
+
+REM Trigger smilehax2 overflow (Expected: Out of memory)
+STRINGLN REMOVE NSR,&H60000000,&H3FFFFFFF
+DELAY 11000
+
+REM Validate primitives + hunt module base.
+REM Watch for: BOOT OK / BOOT FAILED <n>
+STRINGLN V=DISCOVER()
+DELAY 25000
+
+REM Durable log readback (all in one screen)
+STRINGLN PRINT LOADV("TXT:PROBEOUT")
+DELAY 8000

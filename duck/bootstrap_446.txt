@@ -1,17 +1,17 @@
-REM kurumuz bootstrap 446 discovery -- compact TapDucky payload
+REM kurumuz bootstrap 446 discovery v2 -- compact TapDucky payload
 DEFAULTDELAY 40
 DELAY 2000
-STRINGLN ' Switch 2 / SmileBASIC 4.4.6 JP demo bootstrap (discovery port)
-STRINGLN ' Uses proven 4.4.6 arbitrary read/write via slot1 descriptor aim
-STRINGLN ' Scans heap for type-5 objects to find module base (M#)
-STRINGLN ' REMOVE is issued once from Direct mode after RUN; "Out of memory" expected.
+STRINGLN ' Switch 2 / SmileBASIC 4.4.6 JP demo bootstrap (discovery port v2)
+STRINGLN ' Uses proven 4.4.6 arbitrary read via slot1 descriptor aim (window char 16)
+STRINGLN ' Scans heap for type-5 objects [ptr][5] and nearby page-aligned pointers
+STRINGLN ' to discover module base M# and MM# pointer for 4.4.6 port
 STRINGLN VAR NSR,B#,C#,T#,OD$,I,V$,Q$,J,V#,L#,K#=0,FOUND=0,E0#,E3#,PG#,D$,S$,AIMR$,ZERO$
-STRINGLN VAR PHASE=0,M#
+STRINGLN VAR PHASE=0,M#,MM#,D#,G#,PAGE#,CNT#,NXT#,SCAN#,S#
 STRINGLN FOR I=1 TO 18:ZERO$=ZERO$+ZERO$:NEXT
 STRINGLN NSR=ARRAY$(4)
 STRINGLN COPY NSR[0],0,"0000":COPY NSR[1],0,"1111"
 STRINGLN COPY NSR[2],0,"2222":COPY NSR[3],0,"3333"
-STRINGLN PRINT "DIST BOOT 446",1015
+STRINGLN PRINT "DIST BOOT 446v2",1015
 STRINGLN END
 STRINGLN COMMON DEF P$(V#)
 STRINGLN VAR S$="",J
@@ -70,32 +70,49 @@ STRINGLN E0#=U#(MID$(V$,0,4)):E3#=U#(MID$(V$,12,4))
 STRINGLN PRINT "W0 "+HX$(E0#)
 STRINGLN PRINT "W3 "+HX$(E3#)
 STRINGLN ' Module hunt: scan heap pages for type-5 objects [ptr][5]
-STRINGLN FOR ATTEMPT=0 TO 15
-STRINGLN PG#=E0#-ATTEMPT*65536
-STRINGLN IF !PTR(PG#,4096) THEN
-STRINGLN GOTO @NEXT_ATTEMPT
-STRINGLN ENDIF
-STRINGLN D$=AREAD(PG#,2048)
-STRINGLN IF LEN(D$)<2048 THEN
-STRINGLN GOTO @NEXT_ATTEMPT
-STRINGLN ENDIF
+STRINGLN ' For each page, read 2048 bytes and look for L#==5 with page-aligned ptr
+STRINGLN CNT#=0
+STRINGLN FOR ATTEMPT=0 TO 63
+STRINGLN ' Scan region below E0# (heap grows down from slot0 base)
+STRINGLN PAGE#=E0#-ATTEMPT*65536
+STRINGLN IF !PTR(PAGE#,4096) THEN GOTO @NEXT_PAGE
+STRINGLN D$=AREAD(PAGE#,2048)
+STRINGLN IF LEN(D$)<2048 THEN GOTO @NEXT_PAGE
 STRINGLN FOR J=0 TO 2040 STEP 8
 STRINGLN V#=U#(MID$(D$,J,4)):L#=U#(MID$(D$,J+4,4))
 STRINGLN IF L#==5 && PTR(V#,4096) THEN
-STRINGLN IF K#=0 THEN
-STRINGLN K#=PG#+J
-STRINGLN FOUND=FOUND+1
+STRINGLN IF K#=0 THEN K#=PAGE#+J:FOUND=FOUND+1
+STRINGLN CNT#=CNT#+1
+STRINGLN PRINT "T5 @"+HX$(PAGE#+J)+" ptr="+HX$(V#)
+STRINGLN ' Print neighboring words for context
+STRINGLN IF J>=8 THEN
+STRINGLN NXT#=U#(MID$(D$,J-8,4))
+STRINGLN PRINT "  prev="+HX$(NXT#)
 STRINGLN ENDIF
-STRINGLN PRINT "T5 @"+HX$(PG#)+"+"+STR$(J)+" ptr="+HX$(V#)
+STRINGLN IF J+8<2048 THEN
+STRINGLN NXT#=U#(MID$(D$,J+8,4))
+STRINGLN PRINT "  next="+HX$(NXT#)
+STRINGLN ENDIF
 STRINGLN ENDIF
 STRINGLN NEXT
-STRINGLN @NEXT_ATTEMPT
+STRINGLN @NEXT_PAGE
 STRINGLN NEXT
 STRINGLN IF FOUND=0 THEN RETURN FAIL(11)
-STRINGLN PRINT "T5 COUNT "+STR$(FOUND)
+STRINGLN PRINT "T5 COUNT "+STR$(CNT#)
 STRINGLN PRINT "FIRST K# "+HX$(K#)
+STRINGLN ' Module base candidate: K# is type-5 object ptr
+STRINGLN ' For 4.4.9: M#=K#-&H9DB49C; for 4.4.6 we discover by scanning nearby page-aligned ptrs
 STRINGLN M#=K#
 STRINGLN PRINT "M# CAND "+HX$(M#)
+STRINGLN ' Look for MM# pointer: scan near K# for a page-aligned pointer that could be MM#
+STRINGLN ' In 4.4.9: Q$=W$(M#+&H9C9298,128):MM#=U#(MID$(Q$,44,4))
+STRINGLN ' We'll look for page-aligned values near K#+&H9C9298 area
+STRINGLN FOR SCAN#=0 TO 4096 STEP 8
+STRINGLN S#=M#+SCAN#
+STRINGLN IF PTR(S#,4096) THEN
+STRINGLN PRINT "PTRNEAR "+HX$(S#)+" @+"+STR$(SCAN#)
+STRINGLN ENDIF
+STRINGLN NEXT
 STRINGLN PHASE=2:PRINT "BOOT OK DISCOVERY":RETURN 1
 STRINGLN END
 STRINGLN COMMON DEF START(PORT,A,B,C,D)
