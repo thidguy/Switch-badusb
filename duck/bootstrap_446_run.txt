@@ -31,3 +31,11 @@ DELAY 25000
 REM Durable log readback (all in one screen)
 STRINGLN PRINT LOADV("TXT:PROBEOUT")
 DELAY 8000
+
+REM Stage S5: hunt the callback-object linked list in the heap.
+REM Looks for: *(node-0x258) = .text callback ptr  AND  *(node+8) = plausible next.
+REM Run this AFTER a successful DISCOVER. Watch for: S5 HITS <n> MINCB <ptr>
+STRINGLN V=HUNT5()
+DELAY 60000
+STRINGLN PRINT LEFT$(LOADV("TXT:PROBEOUT"),900)
+DELAY 8000
