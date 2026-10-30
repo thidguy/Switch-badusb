@@ -7,13 +7,13 @@ REM ============================================
 DEFAULTDELAY 60
 DELAY 9000
 
-REM Save the typed library as TXT:NS2
-STRINGLN SAVE "TXT:NS2"
-DELAY 6000
+REM Dump slot 0 to TXT:NS2 (PRGEDIT/PRGGET$/SAVEV, not SAVE)
+STRINGLN V=SAVEP()
+DELAY 8000
 
-REM Load it back clean, then run it
-STRINGLN LOAD "TXT:NS2"
-DELAY 3000
+REM Reload it fresh into slot 0 (note the ,0 slot argument)
+STRINGLN LOAD "TXT:NS2",0
+DELAY 5000
 
 REM Run it: builds NSR, prints DIST BOOT READY 4461
 STRINGLN RUN
