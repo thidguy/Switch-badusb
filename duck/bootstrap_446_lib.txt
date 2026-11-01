@@ -1,4 +1,4 @@
-REM ns2jb 4.4.6 primitive library -- compact TapDucky payload
+REM ns2bj 4.4.6 primitive library -- compact TapDucky payload
 DEFAULTDELAY 40
 DELAY 2500
 STRINGLN ' ns2jb -- 4.4.6 JP demo bootstrap (Switch Lite / FW 23.0.1)
@@ -12,7 +12,7 @@ STRINGLN ' NOTE: error branches use the proven v21 idiom only:
 STRINGLN '       X$=PLOG(...):SAVEV "TXT:PROBEOUT",CAP$:RETURN 0
 STRINGLN VAR NSR,V$,D$,S$,A$,X$,OD$,OD2$,ZERO$,CAP$,I,J,R
 STRINGLN VAR PHASE=0,B#,C#,T#,E0#,E2#,E3#,KH#,SH#,DGP#,K#,CNT#,PG#,SCAN#,M#,MM#,D#,G#,S2#,PT6#
-STRINGLN DIM MDATA#[7],MDATA#
+STRINGLN DIM MDATA#[7]
 STRINGLN ZERO$=CHR$(0)
 STRINGLN FOR I=1 TO 18:ZERO$=ZERO$+ZERO$:NEXT
 STRINGLN NSR=ARRAY$(4)
@@ -353,9 +353,9 @@ STRINGLN ' SAFETY: probing downward from PT6# faults SmileBASIC once the read le
 STRINGLN ' mapped module image. Do NOT ladder. M# is derived from PT6# via S10VT's vtable
 STRINGLN ' instead: identify the .data offset from the relocation delta table, then
 STRINGLN ' M# = PT6# - offset. S10VT finds the vtable; MDATA# set below once identified.
-STRINGLN IF MDATA#>0 THEN
-STRINGLN M#=PT6#-MDATA#
-STRINGLN X$=PLOG("MFOUND "+HX$(M#)+" DELTA "+HX$(MDATA#))
+STRINGLN IF MDATA#[0]>0 THEN
+STRINGLN M#=PT6#-MDATA#[0]
+STRINGLN X$=PLOG("MFOUND "+HX$(M#)+" DELTA "+HX$(MDATA#[0]))
 STRINGLN IF CAP$!="" THEN SAVEV "TXT:PROBEOUT",CAP$
 STRINGLN RETURN 1
 STRINGLN ENDIF
