@@ -388,7 +388,8 @@ STRINGLN HIT#=0
 STRINGLN PT6#=0
 STRINGLN ' Scan upward for pointers into the module region. Anything in [16MB, 256MB)
 STRINGLN ' is a SmileBASIC .data/.rodata pointer - i.e. a vtable or function pointer.
-STRINGLN FOR PG#=0 TO 127
+STRINGLN ' 128 pages only covered 512KB and missed S6's hit; S6 proved 2MB is readable.
+STRINGLN FOR PG#=0 TO 511
 STRINGLN PAGE#=BASE#+PG#*4096
 STRINGLN D$=RD(PAGE#,2048)
 STRINGLN IF LEN(D$)<2048 THEN X$=PLOG("S10PG "+STR$(PG#)+" SHORT"):GOTO @S10OUT
