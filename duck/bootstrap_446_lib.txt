@@ -1,4 +1,4 @@
-REM ns2bj 4.4.6 primitive library -- compact TapDucky payload
+REM ns2jb 4.4.6 primitive library -- compact TapDucky payload
 DEFAULTDELAY 40
 DELAY 2500
 STRINGLN ' ns2jb -- 4.4.6 JP demo bootstrap (Switch Lite / FW 23.0.1)
@@ -433,8 +433,8 @@ STRINGLN X$=PLOG("== S11 ==")
 STRINGLN ' Test each M# candidate from match_mdata.py with the known hash.
 STRINGLN ' HASH# of main .text[0:128] = 1712821466
 STRINGLN FOR N=1 TO 7
-STRINGLN D$=RD(MDATA#(N),64)
-STRINGLN X$=PLOG("S11C "+STR$(N)+" "+HX$(MDATA#(N))+" LEN "+STR$(LEN(D$)))
+STRINGLN D$=RD(MDATA#[N],64)
+STRINGLN X$=PLOG("S11C "+STR$(N)+" "+HX$(MDATA#[N])+" LEN "+STR$(LEN(D$)))
 STRINGLN IF LEN(D$)>=64 THEN
 STRINGLN H#=HASH#(D$)
 STRINGLN X$=PLOG("S11H "+STR$(N)+" "+STR$(H#)+" MATCH "+STR$(H#==1712821466))
