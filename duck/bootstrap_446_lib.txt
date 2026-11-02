@@ -387,12 +387,11 @@ STRINGLN X$=PLOG("W0 "+HX$(E0#))
 STRINGLN BASE#=FLOOR(E0#/4096)*4096
 STRINGLN HIT#=0
 STRINGLN N=0
-STRINGLN ' Scan DOWNWARD from the page containing E0#. The heap's interpreter objects
-STRINGLN ' (which hold .rodata vtable pointers) live BELOW the window; upward found only
-STRINGLN ' heap-relative 32-bit values. Contiguous 4096-byte stride, 256 pages = 1 MB.
-STRINGLN ' Band [16MB, 1GB) = plausible module base; heap is ~500GB so it can't collide.
-STRINGLN FOR PG#=0 TO 255
-STRINGLN PAGE#=BASE#-PG#*4096
+STRINGLN ' Scan UPWARD, 2MB (the earlier upward scan found 498 sub-heap values but the
+STRINGLN ' old filter hid any in-band ones). Band [16MB, 1GB) is a hard module band:
+STRINGLN ' heap is ~500GB so nothing in-band can be a heap pointer. Contiguous stride.
+STRINGLN FOR PG#=0 TO 511
+STRINGLN PAGE#=BASE#+PG#*4096
 STRINGLN D$=RD(PAGE#,2048)
 STRINGLN IF LEN(D$)<2048 THEN X$=PLOG("S10PG "+STR$(PG#)+" SHORT"):GOTO @S10OUT
 STRINGLN FOR J=0 TO 2044 STEP 4
