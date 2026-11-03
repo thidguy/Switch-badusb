@@ -439,6 +439,85 @@ STRINGLN X$=PLOG("S15 MODCOUNT "+STR$(N))
 STRINGLN IF CAP$!="" THEN SAVEV "TXT:PROBEOUT",CAP$
 STRINGLN RETURN 1
 STRINGLN END
+STRINGLN COMMON DEF S16OBJ()
+STRINGLN VAR D$,J,V#,N,OBJ#,VT#,P#
+STRINGLN ' Materialise interpreter-owned D objects, then read their vtable.
+STRINGLN ' Text consoles / sprites etc. are real classes on a Switch port; the safest
+STRINGLN ' anchor is the currently bound text screen, reached via the SB4 console
+STRINGLN ' object. We enumerate what is reachable from the variable table beyond our
+STRINGLN ' own array: any pointer into a DIFFERENT heap region that is not one of our
+STRINGLN ' sibling string arrays.
+STRINGLN X$=PLOG("== S16 ==")
+STRINGLN X$=PLOG("W0 "+HX$(E0#))
+STRINGLN N=0
+STRINGLN ' Widen: walk the sibling chain forward (descriptors are 0x40 apart per S15)
+STRINGLN ' up to 64 slots, and report any pointer that does NOT point back into the
+STRINGLN ' 0x400-byte sibling band around E0#.
+STRINGLN FOR J=4 TO 255 STEP 4
+STRINGLN V#=U#(MID$(V$,J,4))
+STRINGLN IF PTR(V#,16) THEN
+STRINGLN IF V#<E0#-1048576 || V#>E0#+4194304 THEN
+STRINGLN N=N+1
+STRINGLN X$=PLOG("S16 FAR "+STR$(J/4)+" "+HX$(V#))
+STRINGLN ENDIF
+STRINGLN ENDIF
+STRINGLN NEXT
+STRINGLN X$=PLOG("S16 FARCOUNT "+STR$(N))
+STRINGLN ' Also try: the interpreter's type tags. A real D class vtable lives in the
+STRINGLN ' module; probe a handful of known interpreter object shapes via the fact
+STRINGLN ' that their first word must be in [16MB,1GB). Read past our sibling band.
+STRINGLN P#=E0#+4194304
+STRINGLN D$=RD(P#,256)
+STRINGLN IF LEN(D$)>=256 THEN
+STRINGLN FOR J=0 TO 252 STEP 4
+STRINGLN V#=U#(MID$(D$,J,4))
+STRINGLN IF V#>=16777216 && V#<1073741824 THEN
+STRINGLN X$=PLOG("S16 MODPTR "+HX$(P#+J*2)+" V "+HX$(V#))
+STRINGLN ENDIF
+STRINGLN NEXT
+STRINGLN ELSE
+STRINGLN X$=PLOG("S16 FAR SHORT "+STR$(LEN(D$)))
+STRINGLN ENDIF
+STRINGLN IF CAP$!="" THEN SAVEV "TXT:PROBEOUT",CAP$
+STRINGLN RETURN 1
+STRINGLN END
+STRINGLN COMMON DEF S17T5()
+STRINGLN VAR D$,J,V#,L#,N,P5#,T5V#
+STRINGLN ' Modelled on the REAL 4.4.9 source (not my earlier guess):
+STRINGLN '   KH# comes from B#+8 (slot-1 descriptor), and the type-5 tag record is found
+STRINGLN '   at KH#'s page. On 4.4.6 the matching record is at E0#+0x970 with residue
+STRINGLN '   &HE50. Its +0 field is what 4.4.9 calls V# (candidate module pointer).
+STRINGLN X$=PLOG("== S17 ==")
+STRINGLN X$=PLOG("W0 "+HX$(E0#))
+STRINGLN ' Re-locate the type-5 record by scanning our own window page, then deref it.
+STRINGLN D$=RD(E0#,1024)
+STRINGLN IF LEN(D$)<1024 THEN X$=PLOG("S17 SHORT"):IF CAP$!="" THEN SAVEV "TXT:PROBEOUT",CAP$:RETURN 0
+STRINGLN N=0
+STRINGLN T5V#=0
+STRINGLN FOR J=0 TO 1016 STEP 8
+STRINGLN V#=U#(MID$(D$,J,4)):L#=U#(MID$(D$,J+4,4))
+STRINGLN IF L#==5 && PTR(V#,4096) THEN
+STRINGLN N=N+1
+STRINGLN X$=PLOG("S17 T5 "+HX$(E0#+J*2)+" "+HX$(V#))
+STRINGLN IF T5V#==0 THEN T5V#=V#
+STRINGLN ENDIF
+STRINGLN NEXT
+STRINGLN X$=PLOG("S17 T5COUNT "+STR$(N))
+STRINGLN IF T5V#>0 THEN
+STRINGLN X$=PLOG("S17 DEREF "+HX$(T5V#))
+STRINGLN D$=RD(T5V#,32)
+STRINGLN IF LEN(D$)>=32 THEN
+STRINGLN X$=PLOG("S17 AT "+DUMPH$(D$))
+STRINGLN FOR J=0 TO 24 STEP 4
+STRINGLN X$=PLOG("S17 W"+STR$(J/4)+" "+HX$(U#(MID$(D$,J,4))))
+STRINGLN NEXT
+STRINGLN ELSE
+STRINGLN X$=PLOG("S17 DEREF SHORT")
+STRINGLN ENDIF
+STRINGLN ENDIF
+STRINGLN IF CAP$!="" THEN SAVEV "TXT:PROBEOUT",CAP$
+STRINGLN RETURN 1
+STRINGLN END
 STRINGLN COMMON DEF S14SCAN()
 STRINGLN VAR D$,J,V#,PG#,PAGE#,BASE#,HIT#,N
 STRINGLN ' Contiguous 4MB scan of the SmileBASIC variable table ABOVE the window.
