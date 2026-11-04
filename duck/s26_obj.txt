@@ -1,0 +1,7 @@
+REM ns2jb S26 object-pointer=vtable hunt -- compact TapDucky payload
+DEFAULTDELAY 40
+DELAY 3000
+STRINGLN ' ns2jb 4.4.6 — S26OBJ: follow the object pointer at E0#+0x28 to the vtable.
+STRINGLN ' Run AFTER a successful V=DISCOVER() (S1 must have populated E0#).
+STRINGLN V=S26OBJ()
+STRINGLN PRINT LOADV("TXT:PROBEOUT")

